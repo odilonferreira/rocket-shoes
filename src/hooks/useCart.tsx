@@ -1,7 +1,7 @@
-import { createContext, ReactNode, useContext, useState } from 'react';
-import { toast } from 'react-toastify';
-import { api } from '../services/api';
-import { Product, Stock } from '../types';
+import { createContext, ReactNode, useContext, useState } from "react";
+import { toast } from "react-toastify";
+import { api } from "../services/api";
+import { Product, Stock } from "../types";
 
 interface CartProviderProps {
   children: ReactNode;
@@ -23,28 +23,52 @@ const CartContext = createContext<CartContextData>({} as CartContextData);
 
 export function CartProvider({ children }: CartProviderProps): JSX.Element {
   const [cart, setCart] = useState<Product[]>(() => {
-    // const storagedCart = Buscar dados do localStorage
+    const storagedCart = localStorage.getItem("@RocketShoes:cart");
 
-    // if (storagedCart) {
-    //   return JSON.parse(storagedCart);
-    // }
+    if (storagedCart) {
+      return JSON.parse(storagedCart);
+    }
 
     return [];
   });
 
   const addProduct = async (productId: number) => {
     try {
-      // TODO
+      api.get(`/products/${productId}`).then((response) => {
+        setCart([...cart, response.data]);
+
+        const storagedCart = localStorage.getItem("@RocketShoes:cart");
+
+        if (storagedCart) {
+          const parsedCart = JSON.parse(storagedCart);
+          parsedCart.push(response.data);
+
+          localStorage.setItem("@RocketShoes:cart", JSON.stringify(parsedCart));
+        } else {
+          localStorage.setItem(
+            "@RocketShoes:cart",
+            JSON.stringify([response.data])
+          );
+        }
+      });
     } catch {
-      // TODO
+      throw new Error("Não foi possível adicionar o produto ao carrinho");
     }
   };
 
   const removeProduct = (productId: number) => {
     try {
-      // TODO
+      api.get(`/products/${productId}`).then((response) => {
+        const updatedCart = cart.filter(
+          (product) => response.data.id !== product.id
+        );
+
+        setCart(updatedCart);
+
+        localStorage.setItem("@RocketShoes:cart", JSON.stringify(updatedCart));
+      });
     } catch {
-      // TODO
+      throw new Error("Não foi possível remover o produto do carrinho");
     }
   };
 
